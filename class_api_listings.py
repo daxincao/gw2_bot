@@ -7,12 +7,7 @@ Created on Wed Nov 26 23:39:29 2014
 import urllib2
 import json
 import pandas as pd
-import datetime    
-import logging   
-
-logging.basicConfig(level=logging.DEBUG,
-					format='[%(levelname)s] %(message)s',
-					)
+import datetime     
 
 def make_api_url(item_list, api_url):
     '''Take a list of items and make them acceptable by the api
@@ -45,6 +40,7 @@ class listing(object):
         self.price_625 = self.rank_price(dataframe, 625)
         self.total_quantity = self.sum_column(dataframe, 'quantity')
         self.total_listings = self.sum_column(dataframe, 'listings')
+        self.datetime = datetime.datetime.now()
         
     
     def rank_price(self, dataframe, n):
@@ -80,7 +76,7 @@ class listing(object):
 		
 
 
-def get_listing_dataframe(item_list, api_url):
+def get_listing_dataframe(item_list, api_url="https://api.guildwars2.com/v2/commerce/listings?ids="):
 	'''
 	Returns a dataframe with each row representing a single listing type for an item
 	'''
@@ -107,7 +103,7 @@ def get_listing_dataframe(item_list, api_url):
 		
 
 if __name__ == '__main__':     
-	
+					
     listings_api = "https://api.guildwars2.com/v2/commerce/listings?ids="
     
     item_list = [8920,19697,19698,19699,19739,19729]
