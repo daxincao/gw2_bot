@@ -6,10 +6,14 @@ Created on Wed Nov 26 23:39:29 2014
 """
 import urllib2
 import json
-import pandas
-import datetime       
+import pandas as pd
+import datetime    
+import logging   
 
-# Auxiliary function to format items
+logging.basicConfig(level=logging.DEBUG,
+					format='[%(levelname)s] %(message)s',
+					)
+
 def make_api_url(item_list, api_url):
     '''Take a list of items and make them acceptable by the api
     '''
@@ -21,11 +25,18 @@ def make_api_url(item_list, api_url):
     # Return full url
     return api_url + url_str_joined
 
-# Class for creating an object containing pricing information for each item
+
+'''
+Class of objects for storing buy & sell information 
+sell.price_'x' : sell price at rank 'x' ; e.g. sell_price_1 is the lowest selling price
+total_quantity: total amount of an item being listed
+total_listings: total number of distinct listings 
+'''
 class listing(object):
-    
-    def __init__(self, dataframe, listing_type):
-        self.type = listing_type
+
+    def __init__(self, dataframe, listing_type, item_id):
+        self.listing_type = listing_type
+        self.item_id = item_id
         # Keep as powers of 5 for recursive lookup
         self.price = self.rank_price(dataframe, 1)
         self.price_5 = self.rank_price(dataframe, 5)
@@ -51,7 +62,7 @@ class listing(object):
             if n == 1:
                 return int(0)
             else:
-                return self.rank_price(dataframe, n/5) # Recursive lookup
+                return self.rank_price(dataframe, n/5) # recursive lookup
         
         # If there are no listings, then return 0 as price
         except KeyError:
@@ -64,28 +75,59 @@ class listing(object):
             return int(sum(dataframe[colname]))
         except KeyError:
             return int(0)
-       
-# test
+           
+		
+		
 
+
+def get_listing_dataframe(item_list, api_url):
+	'''
+	Returns a dataframe with each row representing a single listing type for an item
+	'''
+	# Access URL
+	url = make_api_url(item_list, api_url)
+	r = urllib2.urlopen(url)
+	
+	# Convert json
+	data = json.load(r)
+	
+	# Initialize empty list to hold dicts
+	element_list = []
+	
+	# Apply 'listing' class
+	for elem in data:
+		buy_listing = listing(pd.DataFrame(elem['buys']), 'buy', elem['id'])
+		sell_listing = listing(pd.DataFrame(elem['sells']), 'sell', elem['id'])
+		element_list.append(buy_listing.__dict__)
+		element_list.append(sell_listing.__dict__)
+	
+	# Return dataframe
+	return pd.DataFrame.from_dict(element_list)
+
+		
 
 if __name__ == '__main__':     
-
+	
     listings_api = "https://api.guildwars2.com/v2/commerce/listings?ids="
-    
     
     item_list = [8920,19697,19698,19699,19739,19729]
     
-    url = make_api_url(item_list, listings_api)
+    print get_listing_dataframe(item_list, listings_api)
     
-    r = urllib2.urlopen(url)
+    #~ 
+    #~ url = make_api_url(item_list, listings_api)
+    #~ 
+    #~ r = urllib2.urlopen(url)
+    #~ 
+    #~ data = json.load(r)
+    #~ 
+    #~ item_prices = []
+    #~ 
+    #~ for elem in data:
+            #~ buy_listing = listing(pd.DataFrame(elem['buys']), 'buy', elem['id'])
+            #~ sell_listing = listing(pd.DataFrame(elem['sells']), 'sell', elem['id'])
+            #~ print pd.DataFrame.from_dict([buy_listing.__dict__], 'columns')
     
-    data = json.load(r)
     
-    item_prices = []
-    
-    for elem in data:
-            buy_listing = listing(pandas.DataFrame(elem['buys']), 'buy')
-            sell_listing = listing(pandas.DataFrame(elem['sells']), 'sell')
-            print buy_listing.__dict__
-            print sell_listing.__dict__
+			
             
