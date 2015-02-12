@@ -18,11 +18,13 @@ def worker(batch, **kwargs):
 	logger.info('Starting')
 	
 	# Query API
-	return_batch = al.get_listing_dataframe(batch)
+	return_batch = al.get_listing_dataframe(batch) # returns dataframe
 	logger.debug(return_batch)
 	
 	# Write result to db
-	write_batch_to_db(con=con, batch=return_batch)
+	write_batch_to_db(con = kwargs.pop('con'), 
+					  dataframe = return_batch,
+					  table_name = kwargs.pop('table_name'))
 	
 	logger.info("%s threads remaining" % threading.active_count())
 	logger.info('Exiting')		
@@ -36,9 +38,9 @@ def batch_maker(large_list, n):
 		yield batch
 		large_list = large_list[n:] 			
 
-def write_batch_to_db(con, batch):
+def write_batch_to_db(con, dataframe, table_name):
 	# Write batch into db
-	ps2.write_frame(batch, 'new_table', con, flavor='postgresql', if_exists='append')
+	ps2.write_frame(dataframe, name=table_name, con=con, flavor='postgresql', if_exists='append')
 	logger.info("Batch Completed!")
 	
 				
@@ -51,14 +53,14 @@ if __name__ == '__main__':
 	logger = logging.getLogger(__name__)
 	
 	# Initialize connection to db
-	con = psycopg2.connect("dbname='gw2_db' user='postgres'")
+	conn = psycopg2.connect("dbname='gw2_db' user='postgres'")
 	
 	# Generate batches of 200
 	batches = batch_maker(sl.sample_list, 200)
 	
 	# Start threading
 	for batch in batches:
-		w = threading.Thread(target=worker, args=(batch,), kwargs={'con':con})
+		w = threading.Thread(target=worker, args=(batch, ), kwargs={'con':conn, 'table_name': 'item_prices'})
 		w.start()
 
 
