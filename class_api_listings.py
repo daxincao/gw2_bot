@@ -64,7 +64,7 @@ class listing(object):
         except KeyError:
             return int(0)
         else:
-			return None
+            return None
     
     def sum_column(self, dataframe, colname):
         try:
@@ -72,58 +72,47 @@ class listing(object):
         except KeyError:
             return int(0)
            
-		
-		
-
+        
+        
 
 def get_listing_dataframe(item_list, api_url="https://api.guildwars2.com/v2/commerce/listings?ids="):
-	'''
-	Returns a dataframe with each row representing a single listing type for an item
-	'''
-	# Access URL
-	url = make_api_url(item_list, api_url)
-	r = urllib2.urlopen(url)
-	
-	# Convert json
-	data = json.load(r)
-	
-	# Initialize empty list to hold dicts
-	element_list = []
-	
-	# Apply 'listing' class
-	for elem in data:
-		buy_listing = listing(pd.DataFrame(elem['buys']), 'buy', elem['id'])
-		sell_listing = listing(pd.DataFrame(elem['sells']), 'sell', elem['id'])
-		element_list.append(buy_listing.__dict__)
-		element_list.append(sell_listing.__dict__)
-	
-	# Return dataframe
-	return pd.DataFrame.from_dict(element_list)
+    '''
+    Returns a dataframe with each row representing a single listing type for an item
+    '''
+    # Access URL
+    url = make_api_url(item_list, api_url)
+    r = urllib2.urlopen(url)
+    
+    # Convert json
+    data = json.load(r)
+    
+    # Initialize empty list to hold dicts
+    element_list = []
+    
+    # Apply 'listing' class
+    for elem in data:
+        buy_listing = listing(pd.DataFrame(elem['buys']), 'buy', elem['id'])
+        sell_listing = listing(pd.DataFrame(elem['sells']), 'sell', elem['id'])
+        element_list.append(buy_listing.__dict__)
+        element_list.append(sell_listing.__dict__)
+    
+    # Return dataframe ; ordered for clarity
+    column_order = ['item_id', 'listing_type', 'price', 'price_5', 
+                    'price_25', 'price_125', 'price_625', 'total_listings', 
+                    'total_quantity', 'datetime']
+                    
+    return pd.DataFrame.from_dict(element_list)[column_order]
 
-		
+        
 
 if __name__ == '__main__':     
-					
+                    
     listings_api = "https://api.guildwars2.com/v2/commerce/listings?ids="
     
     item_list = [8920,19697,19698,19699,19739,19729]
     
     print get_listing_dataframe(item_list, listings_api)
     
-    #~ 
-    #~ url = make_api_url(item_list, listings_api)
-    #~ 
-    #~ r = urllib2.urlopen(url)
-    #~ 
-    #~ data = json.load(r)
-    #~ 
-    #~ item_prices = []
-    #~ 
-    #~ for elem in data:
-            #~ buy_listing = listing(pd.DataFrame(elem['buys']), 'buy', elem['id'])
-            #~ sell_listing = listing(pd.DataFrame(elem['sells']), 'sell', elem['id'])
-            #~ print pd.DataFrame.from_dict([buy_listing.__dict__], 'columns')
-    
-    
-			
+
+            
             
